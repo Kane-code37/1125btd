@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>誕生日特別試験</title>
+    <style>
+        :root {
+            /* テスト用紙風のカラー */
+            --paper-bg: #fdfaf6;
+            --ink-color: #222222;
+            --red-pen: #d32f2f;
+        }
+        body {
+            /* 学校のプリントっぽさを出すため明朝体を優先 */
+            font-family: "Yu Mincho", "Hiragino Mincho ProN", "MS Mincho", serif;
+            background-color: #d1d5db;
+            color: var(--ink-color);
+            margin: 0;
+            padding: 20px 10px;
+            text-align: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--paper-bg);
+            border: 1px solid #999;
+            padding: 25px 20px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        /* プリントの左上のホッチキス風 */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 15px;
+            height: 2px;
+            background: #666;
+            transform: rotate(-45deg);
+        }
+        h1 {
+            font-size: 22px;
+            border-bottom: 2px solid var(--ink-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--ink-color);
+            padding-bottom: 5px;
+        }
+        .name-box {
+            font-size: 16px;
+        }
+        .name-box span {
+            display: inline-block;
+            width: 120px;
+            border-bottom: 1px dotted var(--ink-color);
+            text-align: right;
+        }
+        .timer {
+            font-family: sans-serif;
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--ink-color);
+            text-align: right;
+            margin-bottom: 15px;
+        }
+        .timer span {
+            font-size: 14px;
+            font-weight: normal;
+        }
+        .question-text {
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            line-height: 1.8;
+            text-align: left;
+        }
+        /* 選択肢ボタン（ゴシック体にして読みやすく） */
+        .btn {
+            font-family: sans-serif;
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            background: #fff;
+            border: 1px solid var(--ink-color);
+            font-size: 16px;
+            color: var(--ink-color);
+            cursor: pointer;
+            text-align: left;
+            transition: 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:active {
+            background: #e0e0e0;
+        }
+        .btn-skip {
+            background: #f0f0f0;
+            text-align: center;
+            margin-top: 30px;
+            border-style: dashed;
+        }
+        .btn-start {
+            background: var(--ink-color);
+            color: #fff;
+            text-align: center;
+            font-size: 18px;
+            margin-top: 30px;
+            padding: 18px;
+        }
+        .hidden {
+            display: none;
+        }
+        .result-box {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid var(--red-pen);
+        }
+        .score-circle {
+            color: var(--red-pen);
+            font-family: sans-serif;
+            font-size: 40px;
+            font-weight: bold;
+            margin: 10px auto;
+        }
+        .present-text {
+            color: var(--ink-color);
+            font-weight: bold;
+            font-size: 20px;
+            margin-top: 15px;
+        }
+        .result-list {
+            text-align: left;
+            margin-top: 30px;
+            font-family: sans-serif;
+        }
+        .result-item {
+            background: #fff;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+        }
+        .mark {
+            font-size: 20px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .mark-correct { color: var(--red-pen); } /* 赤丸 */
+        .mark-wrong { color: #1565c0; } /* 青バツ */
+        
+        .correct-ans { font-weight: bold; }
+        .wrong-ans { text-decoration: line-through; color: #666; }
+        .correct-text { color: var(--red-pen); font-size: 14px; margin-top: 5px; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+<div class="container" id="screen-start">
+    <h1>令和〇年度 誕生日特別試験</h1>
+    <div class="test-header">
+        <div>科目：一般教養（弟）</div>
+        <div class="name-box">氏名 <span>　　　　　　　</span></div>
+    </div>
+    <p style="text-align: left; font-size: 15px; line-height: 1.6;">
+        <strong>【受験上の注意】</strong><br>
+        一、 試験時間は 3分間 とする。<br>
+        二、 解答の機会は 1度きり とする。（リロード禁止）<br>
+        三、 「後で解く」を選択した問題は最後に回される。<br>
+        四、 本試験の成績により誕生日プレゼントが決定する。
+    </p>
+    
+    <button class="btn btn-start" onclick="startQuiz()">試験開始</button>
+</div>
+
+<div class="container hidden" id="screen-quiz">
+    <div class="timer"><span>残り時間 </span><span id="timer-display">03:00</span></div>
+    <div class="question-text" id="question-text">問題テキスト</div>
+    <div id="options-container"></div>
+    <button class="btn btn-skip" onclick="skipQuestion()">一旦飛ばして後で解く</button>
+</div>
+
+<div class="container hidden" id="screen-result">
+    <h1>採点結果</h1>
+    <p id="finish-comment" style="font-weight: bold; color: var(--red-pen); font-size: 22px; font-family: sans-serif;"></p>
+    
+    <div class="result-box">
+        <div class="score-circle" id="score-text">0 / 10</div>
+        <div class="present-text" id="present-text">獲得プレゼント: </div>
+    </div>
+
+    <h2 style="font-size: 18px; border-bottom: 1px solid #333; text-align: left;">解答用紙 控え</h2>
+    <div class="result-list" id="result-list"></div>
+</div>
+
+<div class="container hidden" id="screen-already-played">
+    <h1>試験終了</h1>
+    <p>すでに本試験の受験は完了しています。<br>お疲れ様でした。</p>
+</div>
+
+<script>
+    // 問題データ
+    const quizData = [
+        { q: "三島由紀夫は何者？", options: ["小説家", "俳優", "演歌歌手", "総理大臣"], ans: 0 },
+        { q: "日本で1番長い川は？", options: ["石狩川", "利根川", "信濃川", "天塩川"], ans: 2 },
+        { q: "200匹の魚がいます。そのうち99％がグッピーです。この中からグッピーだけを何匹か取り除いて、魚全体の中に占めるグッピーの割合を98％にしたいとします。グッピーを何匹取り除けばよいでしょうか？", options: ["1匹", "2匹", "49匹", "50匹", "98匹", "100匹"], ans: 5 },
+        { q: "ニューヨークと同じぐらいの緯度に位置するのは？", options: ["青森", "長野", "三重", "高知"], ans: 0 },
+        { q: "トリコの作者は？", options: ["島袋高俊", "島袋光年", "島田光照", "島田光彦"], ans: 1 },
+        { q: "参議院と衆議院の被選挙権は？", options: ["参議院が25歳で衆議院が28歳", "参議院が30歳で衆議院が25歳", "参議院が25歳で衆議院が30歳", "どちらも25歳"], ans: 1 },
+        { q: "太陽光が地球に届くまでの時間は？", options: ["1分45秒", "8分20秒", "17分30秒", "25分15秒"], ans: 1 },
+        { q: "カンボジアの首都は？", options: ["ハノイ", "プノンペン", "ホーチミン", "シェムリアップ"], ans: 1 },
+        { q: "一般的にアメリカ大陸を発見したと言われているのは？", options: ["マゼラン", "コロンブス", "ヴァスコダガマ", "バルトロメウ"], ans: 1 },
+        { q: "第87代内閣総理大臣は？", options: ["福田康夫", "麻生太郎", "小泉純一郎", "安倍晋三"], ans: 2 }
+    ];
+
+    let pendingQuestions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    let currentQIndex = -1;
+    let userAnswers = []; 
+    let timerInterval;
+
+    const screenStart = document.getElementById('screen-start');
+    const screenQuiz = document.getElementById('screen-quiz');
+    const screenResult = document.getElementById('screen-result');
+    const screenAlreadyPlayed = document.getElementById('screen-already-played');
+    
+    window.onload = () => {
+        if (localStorage.getItem('tbQuizCompleted') === 'true') {
+            screenStart.classList.add('hidden');
+            screenAlreadyPlayed.classList.remove('hidden');
+        } else if (localStorage.getItem('tbQuizEndTime')) {
+            startQuiz(true);
+        }
+    };
+
+    function startQuiz(isResume = false) {
+        screenStart.classList.add('hidden');
+        screenQuiz.classList.remove('hidden');
+
+        let endTime;
+        if (isResume) {
+            endTime = parseInt(localStorage.getItem('tbQuizEndTime'));
+            pendingQuestions = JSON.parse(localStorage.getItem('tbPending') || '[0,1,2,3,4,5,6,7,8,9]');
+            userAnswers = JSON.parse(localStorage.getItem('tbAnswers') || '[]');
+        } else {
+            // 3分（180,000ミリ秒）に変更
+            endTime = Date.now() + 3 * 60 * 1000;
+            localStorage.setItem('tbQuizEndTime', endTime.toString());
+            localStorage.setItem('tbPending', JSON.stringify(pendingQuestions));
+        }
+
+        startTimer(endTime);
+        showNextQuestion();
+    }
+
+    function startTimer(endTime) {
+        timerInterval = setInterval(() => {
+            const now = Date.now();
+            const timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
+            
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${m}:${s}`;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                finishQuiz();
+            }
+        }, 1000);
+    }
+
+    function showNextQuestion() {
+        if (pendingQuestions.length === 0) {
+            finishQuiz();
+            return;
+        }
+        
+        currentQIndex = pendingQuestions.shift();
+        localStorage.setItem('tbPending', JSON.stringify(pendingQuestions));
+        
+        const qData = quizData[currentQIndex];
+        
+        // 学校のテスト風に「【問1】」と表示
+        document.getElementById('question-text').innerText = `【問 ${currentQIndex + 1}】\n${qData.q}`;
+        
+        const optsContainer = document.getElementById('options-container');
+        optsContainer.innerHTML = '';
+        
+        qData.options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = opt;
+            btn.onclick = () => answerQuestion(index);
+            optsContainer.appendChild(btn);
+        });
+    }
+
+    function skipQuestion() {
+        pendingQuestions.push(currentQIndex);
+        localStorage.setItem('tbPending', JSON.stringify(pendingQuestions));
+        showNextQuestion();
+    }
+
+    function answerQuestion(selectedIndex) {
+        const qData = quizData[currentQIndex];
+        const isCorrect = (selectedIndex === qData.ans);
+        
+        userAnswers.push({
+            qNum: currentQIndex + 1,
+            q: qData.q,
+            userAnsText: qData.options[selectedIndex],
+            correctAnsText: qData.options[qData.ans],
+            isCorrect: isCorrect
+        });
+        localStorage.setItem('tbAnswers', JSON.stringify(userAnswers));
+
+        showNextQuestion();
+    }
+
+    function finishQuiz() {
+        clearInterval(timerInterval);
+        localStorage.setItem('tbQuizCompleted', 'true');
+        
+        screenQuiz.classList.add('hidden');
+        screenResult.classList.remove('hidden');
+
+        pendingQuestions.forEach(qIdx => {
+            userAnswers.push({
+                qNum: qIdx + 1,
+                q: quizData[qIdx].q,
+                userAnsText: "時間切れ・無解答",
+                correctAnsText: quizData[qIdx].options[quizData[qIdx].ans],
+                isCorrect: false
+            });
+        });
+
+        // 回答を第1問から順に並び替え
+        userAnswers.sort((a, b) => a.qNum - b.qNum);
+
+        const correctCount = userAnswers.filter(a => a.isCorrect).length;
+        document.getElementById('score-text').innerText = `${correctCount} / 10`;
+
+        // プレゼント判定
+        let present = "";
+        if (correctCount === 0) present = "なし（赤点）";
+        else if (correctCount === 1) present = "プレートのみ";
+        else if (correctCount === 2) present = "プレモル1缶";
+        else if (correctCount === 3) present = "G1馬券1000円分";
+        else if (correctCount === 4) present = "ケンタッキー3000円分";
+        else if (correctCount === 5) present = "5000円分何でも";
+        else if (correctCount === 6) present = "瓶ビール10本 ＋ 日本酒";
+        else if (correctCount === 7) present = "焼肉（高見か南大門）";
+        else if (correctCount === 8) present = "好きな所旅行";
+        else if (correctCount === 9) present = "好きな所旅行 ＋ 瓶ビール5本 or 日本酒";
+        else if (correctCount === 10) present = "好きな所旅行 ＋ 瓶ビール10本 ＋ 日本酒";
+        
+        document.getElementById('present-text').innerText = `獲得プレゼント:\n${present}`;
+
+        // 先生のコメント風
+        const commentEl = document.getElementById('finish-comment');
+        if (correctCount === 10) {
+            commentEl.innerText = "💮 満点！大変よくできました。";
+        } else if (correctCount >= 7) {
+            commentEl.innerText = "⭕️ 合格！よくできました。";
+        } else if (correctCount >= 4) {
+            commentEl.innerText = "🔺 あともう少し！";
+        } else {
+            commentEl.innerText = "❌ 要復習（赤点）";
+        }
+
+        // 一覧表示（赤ペン採点風）
+        const listContainer = document.getElementById('result-list');
+        userAnswers.forEach((ans) => {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            
+            const mark = ans.isCorrect ? '<span class="mark mark-correct">⭕️</span>' : '<span class="mark mark-wrong">❌</span>';
+            
+            div.innerHTML = `
+                <div style="font-size:13px; margin-bottom:8px; color:#555;">【問 ${ans.qNum}】 ${ans.q}</div>
+                <div style="font-size:15px;">${mark} 解答: <span class="${ans.isCorrect ? 'correct-ans' : 'wrong-ans'}">${ans.userAnsText}</span></div>
+                ${!ans.isCorrect ? `<div class="correct-text">正解: ${ans.correctAnsText}</div>` : ''}
+            `;
+            listContainer.appendChild(div);
+        });
+    }
+</script>
+
+</body>
+</html>
